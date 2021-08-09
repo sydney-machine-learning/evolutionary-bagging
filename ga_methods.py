@@ -1,4 +1,6 @@
 import random
+import numpy as np
+from decision_tree import eval_model
 
 def mutate(tree):
     # node_list: dictionary of nodes
@@ -39,3 +41,33 @@ def crossover(tree1, tree2):
     tree1 = tree1.get_node_list(tree1.root, [])
     tree2 = tree2.get_node_list(tree2.root, [])
     return tree1, tree2
+
+
+def ga_iteration(tree_list, 
+                 eval_input, 
+                 eval_target,
+                 n_select,
+                 n_crossover,
+                 n_mutate):
+    ga_trees = []
+    eval_results = np.asarray([eval_model(tree, eval_input, eval_target) for tree in tree_list])
+    # select
+    select_indices = eval_results.argsort()[-n_select:][::-1]
+    for i in select_indices:
+        ga_trees.append(tree_list[i])
+    # crossover
+    crossover_trees = []
+    select_indices = eval_results.argsort()[-n_crossover:][::-1]
+    for i in select_indices:
+        crossover_trees.append(tree_list[i])
+    random.shuffle(crossover_trees)
+    for i in range(len(crossover_trees), 2):
+        tree1 = crossover_trees[i]
+        tree2 = crossover_trees[i+1]
+        crossover_trees[i:(i+2)] = crossover(tree1, tree2)
+    ga_trees.extend(crossover_trees)
+    # mutate
+    select_indices = random.sample(range(len(ga_trees)), n_mutate)
+    for i in select_indices:
+        mutate(ga_trees[i])
+    return ga_trees

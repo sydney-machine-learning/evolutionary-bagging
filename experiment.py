@@ -6,7 +6,7 @@ from sklearn.ensemble import BaggingClassifier
 import matplotlib.pyplot as plt
 import random
 from decision_tree import *
-from ga_methods import mutate, crossover
+from ga_methods import *
 from ab_methods import adaboost_single_tree
 from tqdm import tqdm
 
@@ -42,16 +42,11 @@ class Experiment():
         print(f"Count train labels: {list(count_train_labels)}")
         print(f"Coun test labels: {list(count_test_labels)}")
 
-    def eval_model(self, clf, X, y):
-        y_test_preds = clf.predict(X)
-        test_acc = accuracy_score(y, y_test_preds)
-        return test_acc
-
     def init_bagging_trees(self, X, y, X_train, y_train, X_test, y_test):
         # Initial trees from bagging
         bagging_clf = BaggingClassifier(n_estimators=self.p)
         bagging_clf.fit(X_train, y_train)
-        print('Bagging accuracy: ', self.eval_model(bagging_clf, X_test, y_test))
+        print('Bagging accuracy: ', eval_model(bagging_clf, X_test, y_test))
         trees = bagging_clf.estimators_
         trees = [construct_tree(t, X, y) for t in trees]
         return trees
@@ -63,38 +58,21 @@ class Experiment():
         ab_select = []
         for i in tqdm(range(self.step)):
             # GA step
-            ga_trees = []
-            eval_results = np.asarray([self.eval_model(tree, self.X_test, self.y_test) for tree in trees])
-            # select
-            select_indices = eval_results.argsort()[-self.n_select:][::-1]
-            for i in select_indices:
-                ga_trees.append(trees[i])
-            # crossover
-            crossover_trees = []
-            select_indices = eval_results.argsort()[-self.n_crossover:][::-1]
-            for i in select_indices:
-                crossover_trees.append(trees[i])
-            random.shuffle(crossover_trees)
-            for i in range(len(crossover_trees), 2):
-                tree1 = crossover_trees[i]
-                tree2 = crossover_trees[i+1]
-                crossover_trees[i:(i+2)] = crossover(tree1, tree2)
-            ga_trees.extend(crossover_trees)
-            # mutate
-            select_indices = random.sample(range(len(ga_trees)), self.n_mutate)
-            for i in select_indices:
-                mutate(ga_trees[i])
-
+            ga_trees = ga_iteration(trees, 
+                                    self.X_train, 
+                                    self.y_train, 
+                                    self.n_select, 
+                                    self.n_crossover, 
+                                    self.n_mutate)
                 
             # AdaBoost step
             ab_trees = [adaboost_single_tree(self.X_train, self.y_train, tree) for tree in trees]
-                                    
                                     
             # combine tree
             forest = []
             forest.extend(ga_trees)
             forest.extend(ab_trees)
-            forest_eval_results = np.asarray([self.eval_model(tree, self.X_test, self.y_test) for tree in forest])
+            forest_eval_results = np.asarray([eval_model(tree, self.X_train, self.y_train) for tree in forest])
             select_indices = forest_eval_results.argsort()[-self.p:][::-1]
             trees = [forest[i] for i in select_indices]
             ga_acc = round(forest_eval_results[:self.p].mean()*100, 2)

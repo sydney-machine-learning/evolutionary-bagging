@@ -2,6 +2,7 @@ from __future__ import division, print_function
 import numpy as np
 import math
 from scipy.stats import mode
+from sklearn.metrics import accuracy_score
 
 def divide_on_feature(X, feature, threshold):
     """ Divide dataset based on if sample value on feature index is larger than
@@ -17,7 +18,6 @@ def divide_on_feature(X, feature, threshold):
 
     return np.array([X_1, X_2])
 
-
 def calculate_entropy(y):
     """ Calculate the entropy of label array y """
     log2 = lambda x: math.log(x) / math.log(2)
@@ -29,7 +29,6 @@ def calculate_entropy(y):
         entropy += -p * log2(p)
     return entropy
 
-
 def calculate_variance(X):
     """ Return the variance of the features in dataset X """
     mean = np.ones(np.shape(X)) * X.mean(0)
@@ -37,7 +36,6 @@ def calculate_variance(X):
     variance = (1 / n_samples) * np.diag((X - mean).T.dot(X - mean))
     
     return variance
-
 
 class DecisionNode():
     """Class that represents a decision node or leaf in the decision tree
@@ -63,7 +61,8 @@ class DecisionNode():
         self.parent = None
         self.left = left      # 'Left' subtree
         self.right = right    # 'Right' subtree
-
+        self.correct = 0
+        self.incorrect = 0
 
 # Super class of RegressionTree and ClassificationTree
 class DecisionTree(object):
@@ -96,16 +95,34 @@ class DecisionTree(object):
         self.one_dim = None
         # If Gradient Boost
         self.loss = loss
+        self.node_list = []
+
+    def setup_tree(self, X):
+        self.find_parent(self.root, None)
+        self.node_list = self.get_node_list(self.root, [])
+        self.target_values = self.get_target_values()
+        self.feature_range = self.get_feature_range(X)
 
     def fit(self, X, y, loss=None):
         """ Build decision tree """
         self.one_dim = len(np.shape(y)) == 1
         self.root = self._build_tree(X, y)
-        self.find_parent(self.root, None)
-        self.node_list = self.get_node_list(self.root, [])
         self.feature_range = self.get_feature_range(X)
-        self.target_values = self.get_target_values()
+        self.setup_tree(X)
         self.loss = None
+    
+    def get_size(self):
+        return len(self.node_list)
+
+    def get_depth(self):
+        def depth_traverse(node, depth):
+            depth += 1
+            # case 
+            if node.feature is None:
+                return depth
+            else:
+                return max(depth_traverse(node.left, depth), depth_traverse(node.right, depth))
+        return depth_traverse(self.root, 0)
 
     def get_feature_range(self, X):
         feature_range = []
@@ -126,7 +143,7 @@ class DecisionTree(object):
         # case split node
         else:
             self.find_parent(node.left, node)
-            self.find_parent(node.right, parent)
+            self.find_parent(node.right, node)
 
     def _build_tree(self, X, y, current_depth=0):
         """ Recursive method which builds out the decision tree and splits X and respective y
@@ -237,6 +254,45 @@ class DecisionTree(object):
         y_pred = [self.predict_value(sample) for sample in X]
         return y_pred
 
+    def predict_save_info(self, X, y):
+        def predict_value_save_info(x, target, tree=None):
+            """ Do a recursive search down the tree and make a prediction of the data sample by the
+                value of the leaf that we end up at """
+
+            if tree is None:
+                tree = self.root
+
+            # If we have a value (i.e we're at a leaf) => return value as the prediction
+            if tree.value is not None:
+                if tree.value == target:
+                    tree.correct += 1
+                    return tree.value, True
+                else:
+                    tree.incorrect += 1
+                    return tree.value, False
+
+            # Choose the feature that we will test
+            feature_value = x[tree.feature]
+            # Determine if we will follow left or right branch
+            branch = tree.right
+            if isinstance(feature_value, int) or isinstance(feature_value, float):
+                if feature_value >= tree.threshold:
+                    branch = tree.left
+            elif feature_value == tree.threshold:
+                branch = tree.left
+
+            # Test subtree
+            value, correct = predict_value_save_info(x, target, branch)
+            if correct:
+                tree.correct += 1
+            else:
+                tree.incorrect += 1
+            return value, correct
+        y_pred = []
+        for sample, target in zip(X, y):
+            y_pred.append(predict_value_save_info(sample, target)[0])
+        return y_pred
+            
     def print_tree(self, tree=None, indent=" "):
         """ Recursively print the decision tree """
         if not tree:
@@ -311,7 +367,7 @@ def construct_tree(sklearn_tree, X, y):
         # case leaf
         if left_index < 0:
             node = DecisionNode(feature=None,
-                                threshold=threshold,
+                                threshold=None,
                                 value=value,
                                 parent=None,
                                 left=None,
@@ -332,8 +388,11 @@ def construct_tree(sklearn_tree, X, y):
     tree = DecisionTree()
     tree.root = root
     tree.one_dim = len(np.shape(y)) == 1
-    tree.find_parent(tree.root, None)
-    tree.node_list = tree.get_node_list(tree.root, [])
+    tree.setup_tree(X)
     tree.feature_range = tree.get_feature_range(X)
-    tree.target_values = tree.get_target_values()
     return tree
+
+def eval_model(clf, X, y):
+    y_test_preds = clf.predict(X)
+    test_acc = accuracy_score(y, y_test_preds)
+    return test_acc
