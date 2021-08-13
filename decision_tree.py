@@ -3,6 +3,7 @@ import numpy as np
 import math
 from scipy.stats import mode
 from sklearn.metrics import accuracy_score
+import random
 
 def divide_on_feature(X, feature, threshold):
     """ Divide dataset based on if sample value on feature index is larger than
@@ -99,7 +100,10 @@ class DecisionTree(object):
 
     def setup_tree(self, X):
         self.find_parent(self.root, None)
-        self.node_list = self.get_node_list(self.root, [])
+        try:
+            self.node_list = self.get_node_list(self.root, [])
+        except:
+            print(self.root.left.value, self.root.right.value)
         self.target_values = self.get_target_values()
         self.feature_range = self.get_feature_range(X)
 
@@ -392,7 +396,46 @@ def construct_tree(sklearn_tree, X, y):
     tree.feature_range = tree.get_feature_range(X)
     return tree
 
+def eval_tree(tree, X, y):
+    # clean accuracy log for nodes
+    for node in tree.node_list:
+        node.correct = 0
+        node.incorrect = 0
+    y_preds = tree.predict_save_info(X, y)
+    acc = accuracy_score(y, y_preds)
+    return acc
+
 def eval_model(clf, X, y):
-    y_test_preds = clf.predict(X)
-    test_acc = accuracy_score(y, y_test_preds)
-    return test_acc
+    y_preds = clf.predict(X)
+    return accuracy_score(y, y_preds)
+
+def gen_new_binary_tree(X, y):
+    new_tree = DecisionTree()
+    new_tree.get_feature_range(X)
+    feature = random.randrange(X.shape[-1])
+    feature_range = new_tree.get_feature_range(X)[feature]
+    threshold = random.uniform(feature_range[0], feature_range[1])
+    left_value = random.choice(np.unique(y))
+    right_value = left_value
+    while right_value == left_value:
+        right_value = random.choice(np.unique(y))
+    new_tree.root = DecisionNode(feature=feature,
+                                 threshold=threshold,
+                                 value=None,
+                                 parent=None)
+    left_node = DecisionNode(feature=None,
+                             threshold=None,
+                             value=left_value,
+                             parent=new_tree.root,
+                             left=None,
+                             right=None)
+    right_node = DecisionNode(feature=None,
+                              threshold=None,
+                              value=right_value,
+                              parent=new_tree.root,
+                              left=None,
+                              right=None)
+    new_tree.root.left = left_node
+    new_tree.root.right = right_node
+    new_tree.setup_tree(X)
+    return new_tree

@@ -1,0 +1,37 @@
+p: 200 | r: 0.93 | m: 0.005 | step: 200 | x: 100 | gen gap: 0.25 | selection: tournament
+Dataset: iris
+Decision tree max depth 3 accuracy: 93.33
+Decision tree free accuracy: 93.33
+Bagging accuracy: 96.67
+AdaBoost accuracy: 96.67
+GA tree accuracy: 100.0
+Bagging GA tree accuracy: 100.0
+Best tree depth: 3
+========================================================================
+Dataset: wine
+Decision tree max depth 3 accuracy: 97.22
+Decision tree free accuracy: 97.22
+Bagging accuracy: 94.44
+AdaBoost accuracy: 83.33
+GA tree accuracy: 94.44
+Bagging GA tree accuracy: 94.44
+Best tree depth: 4
+========================================================================
+Dataset: breast_cancer
+Decision tree max depth 3 accuracy: 94.74
+Decision tree free accuracy: 92.11
+Bagging accuracy: 96.49
+AdaBoost accuracy: 92.98
+GA tree accuracy: 94.74
+Bagging GA tree accuracy: 94.74
+Best tree depth: 3
+========================================================================
+Dataset: abalone
+Decision tree max depth 3 accuracy: 57.66
+Decision tree free accuracy: 55.02
+Bagging accuracy: 55.74
+AdaBoost accuracy: 58.73
+GA tree accuracy: 55.86
+Bagging GA tree accuracy: 56.46
+Best tree depth: 3
+========================================================================
