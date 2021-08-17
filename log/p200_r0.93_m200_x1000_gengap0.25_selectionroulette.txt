@@ -35,3 +35,12 @@ GA tree accuracy: 56.34
 Bagging GA tree accuracy: 55.74
 Best tree depth: 3
 ========================================================================
+Dataset: mnist
+Decision tree max depth 3 accuracy: 69.72
+Decision tree free accuracy: 90.0
+Bagging accuracy: 95.56
+AdaBoost accuracy: 25.56
+GA tree accuracy: 26.94
+Bagging GA tree accuracy: 33.61
+Best tree depth: 6
+========================================================================

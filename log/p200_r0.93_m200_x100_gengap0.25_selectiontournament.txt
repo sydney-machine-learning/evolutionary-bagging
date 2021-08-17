@@ -13,25 +13,34 @@ Decision tree max depth 3 accuracy: 97.22
 Decision tree free accuracy: 97.22
 Bagging accuracy: 94.44
 AdaBoost accuracy: 83.33
-GA tree accuracy: 94.44
-Bagging GA tree accuracy: 94.44
-Best tree depth: 4
+GA tree accuracy: 91.67
+Bagging GA tree accuracy: 91.67
+Best tree depth: 3
 ========================================================================
 Dataset: breast_cancer
 Decision tree max depth 3 accuracy: 94.74
 Decision tree free accuracy: 92.11
-Bagging accuracy: 96.49
+Bagging accuracy: 93.86
 AdaBoost accuracy: 92.98
-GA tree accuracy: 94.74
+GA tree accuracy: 92.11
 Bagging GA tree accuracy: 94.74
-Best tree depth: 3
+Best tree depth: 4
 ========================================================================
 Dataset: abalone
 Decision tree max depth 3 accuracy: 57.66
 Decision tree free accuracy: 55.02
-Bagging accuracy: 55.74
+Bagging accuracy: 60.05
 AdaBoost accuracy: 58.73
-GA tree accuracy: 55.86
-Bagging GA tree accuracy: 56.46
+GA tree accuracy: 56.58
+Bagging GA tree accuracy: 55.74
+Best tree depth: 3
+========================================================================
+Dataset: mnist
+Decision tree max depth 3 accuracy: 69.72
+Decision tree free accuracy: 90.0
+Bagging accuracy: 94.72
+AdaBoost accuracy: 25.56
+GA tree accuracy: 26.67
+Bagging GA tree accuracy: 36.11
 Best tree depth: 3
 ========================================================================
