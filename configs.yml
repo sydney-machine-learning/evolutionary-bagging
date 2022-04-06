@@ -1,0 +1,75 @@
+mnist: 
+    n_bags: 60 
+    n_iter: 20 
+    n_new_bags: 4 
+    n_mutation: 2 
+    size_coef: 5000
+breast_cancer: 
+    n_bags: 20 
+    n_iter: 20 
+    n_new_bags: 4 
+    n_mutation: 2 
+    size_coef: 2000
+abalone:  
+    n_bags: 50 
+    n_iter: 35 
+    n_new_bags: 10 
+    n_mutation: 5 
+    size_coef: 10000
+red_wine:  
+    n_bags: 50 
+    n_iter: 25 
+    n_new_bags: 10 
+    n_mutation: 5 
+    size_coef: 5000
+pima:  
+    n_bags: 60 
+    n_iter: 15 
+    n_new_bags: 10 
+    n_mutation: 5 
+    size_coef: 2000
+car: 
+    n_bags: 60 
+    n_iter: 30 
+    n_new_bags: 10 
+    n_mutation: 5 
+    size_coef: 5000
+tic-tac-toe:  
+    n_bags: 70 
+    n_iter: 20 
+    n_new_bags: 14 
+    n_mutation: 10 
+    size_coef: 4000
+ionosphere:  
+    n_bags: 40 
+    n_iter: 20 
+    n_new_bags: 10 
+    n_mutation: 4 
+    size_coef: 1000
+churn:  
+    n_bags: 15 
+    n_iter: 20 
+    n_new_bags: 3 
+    n_mutation: 2 
+    mutation_rate: 0.05 
+    size_coef: 10000
+flare:  
+    n_bags: 30 
+    n_iter: 20 
+    n_new_bags: 6 
+    n_mutation: 3 
+    mutation_rate: 0.05 
+    size_coef: 2000
+ring:  
+    n_bags: 60 
+    n_iter: 20 
+    n_new_bags: 6 
+    n_mutation: 3 
+    mutation_rate: 0.05 
+    size_coef: 10000
+two-spiral:  
+    n_bags: 40 
+    n_iter: 40 
+    n_new_bags: 10 
+    n_mutation: 5 
+    size_coef: 1000

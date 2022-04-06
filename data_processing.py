@@ -30,10 +30,6 @@ def load_data_sklearn(dataset_name):
         data = load_digits()
     elif dataset_name == 'breast_cancer':
         data = load_breast_cancer()
-    elif dataset_name == 'iris':
-        data = load_iris()
-    elif dataset_name == 'wine':
-        data = load_wine()
     return data
 
 def load_abalone(data):
@@ -95,6 +91,24 @@ def load_ionosphere(data):
     data.target = np.asarray(df.iloc[:, -1])
     return data
 
+def load_churn(data):
+    df = pd.read_csv('data/churn.tsv', sep='\t')
+    data.data = np.asarray(df.loc[:, df.columns!='target'])
+    data.target = np.asarray(df['target'])
+    return data
+
+def load_flare(data):
+    df = pd.read_csv('data/flare.tsv', sep='\t')
+    data.data = np.asarray(df.loc[:, df.columns!='target'])
+    data.target = np.asarray(df['target'])
+    return data
+
+def load_ring(data):
+    df = pd.read_csv('data/ring.tsv', sep='\t')
+    data.data = np.asarray(df.loc[:, df.columns!='target'])
+    data.target = np.asarray(df['target'])
+    return data    
+
 def load_nbit(data, n_bit):
     data_dict = dict()
     while len(data_dict) < 2**n_bit:
@@ -129,7 +143,7 @@ def load_two_spiral(data):
 def load_data(dataset_name, test_size=0.2, random_state=1):
     sc = StandardScaler()
     data = Object()
-    if dataset_name in ["mnist", "breast_cancer", "iris", "wine"]:
+    if dataset_name in ["mnist", "breast_cancer"]:
         data = load_data_sklearn(dataset_name)
     elif dataset_name == 'abalone':
         data = load_abalone(data)
@@ -143,6 +157,12 @@ def load_data(dataset_name, test_size=0.2, random_state=1):
         data = load_tictactoe(data)
     elif dataset_name == 'ionosphere':
         data = load_ionosphere(data)
+    elif dataset_name == 'churn':
+        data = load_churn(data)
+    elif dataset_name == 'flare':
+        data = load_flare(data)
+    elif dataset_name == 'ring':
+        data = load_ring(data)
     elif dataset_name == '4bit':
         data = load_nbit(data, 4)
     elif dataset_name == '6bit':
@@ -152,17 +172,23 @@ def load_data(dataset_name, test_size=0.2, random_state=1):
     elif dataset_name == 'two-spiral':
         data = load_two_spiral(data)
     X, y = data.data, data.target
-    X_train, X_test, y_train, y_test = train_test_split(X, y, 
-                                                        test_size=test_size, 
-                                                        random_state=random_state, 
-                                                        stratify=y)
-    X_train = sc.fit_transform(X_train)
-    X_test = sc.transform(X_test)
-    print('Train: ', X_train.shape, ' | Test: ', X_test.shape)
-    print('Train labels: ', np.unique(y_train, return_counts=True))
-    print('Test labels: ', np.unique(y_test, return_counts=True))
-    X_train = pd.DataFrame(X_train)
-    X_test = pd.DataFrame(X_test)
-    y_train = pd.DataFrame(y_train)
-    y_test = pd.DataFrame(y_test)
-    return X_train, X_test, y_train, y_test
+    if test_size > 0:
+        X_train, X_test, y_train, y_test = train_test_split(X, y, 
+                                                            test_size=test_size, 
+                                                            random_state=random_state, 
+                                                            stratify=y)
+        X_train = sc.fit_transform(X_train)
+        X_test = sc.transform(X_test)
+        print('Train: ', X_train.shape, ' | Test: ', X_test.shape)
+        print('Train labels: ', np.unique(y_train, return_counts=True))
+        print('Test labels: ', np.unique(y_test, return_counts=True))
+        X_train = pd.DataFrame(X_train)
+        X_test = pd.DataFrame(X_test)
+        y_train = pd.DataFrame(y_train)
+        y_test = pd.DataFrame(y_test)
+        return X_train, X_test, y_train, y_test
+    else:
+        X_train = sc.fit_transform(X)
+        X_train = pd.DataFrame(X_train)
+        y_train = pd.DataFrame(y)
+        return X_train, None, y_train, None

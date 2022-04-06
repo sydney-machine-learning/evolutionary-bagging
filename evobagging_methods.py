@@ -1,4 +1,5 @@
 from sklearn.tree import DecisionTreeClassifier
+from sklearn.metrics import *
 import numpy as np
 import pandas as pd
 import random
@@ -6,13 +7,14 @@ from scipy import stats
 import copy
 from multiprocessing import Pool
 from functools import partial
+import time
 
 class EvoBagging:
     def __init__(self, X_train, y_train, 
                 n_select, n_new_bags, 
                 max_initial_size, n_crossover, 
                 n_mutation, mutation_size, 
-                size_coef, metric, procs=4):
+                size_coef, metric, procs):
         self.X_train = X_train
         self.y_train = y_train
         self.n_select = n_select
@@ -33,7 +35,7 @@ class EvoBagging:
         return perf, clf, preds
         
     def get_payoff(self, bags, idx):
-        met, clf, preds = self.get_score(bags[idx]['X'], bags[idx]['y'], self.metric)
+        met, clf, preds = self.get_score(bags[idx]['X'], bags[idx]['y'])
         size_multiply = (self.size_coef+bags[idx]['X'].shape[0])/self.size_coef
         payoff = met * size_multiply
         bags[idx]['clf'] = clf
@@ -41,18 +43,22 @@ class EvoBagging:
         bags[idx]['preds'] = preds
         bags[idx]['payoff'] = payoff
         bags[idx]['size'] = bags[idx]['X'].shape[0]
-        return payoff, met
+        return idx, copy.deepcopy(bags[idx])
 
-    def naive_selection(self, bags):
+    def naive_selection(self, bags, mode="selection"):
         selected_bag_dict = {}
         selected_ids = []
         bag_idx, payoff_list = [], []
         for idx, bag in bags.items():
             bag_idx.append(idx)
             payoff_list.append(bag['payoff'])
-        selected_ids = [idx for _, idx in sorted(zip(payoff_list, bag_idx), reverse=True)][:self.n_select]
-        selected_bag_dict = {i: bags[i] for i in selected_ids}
-        return selected_bag_dict, selected_ids
+        if mode=="selection":
+            selected_ids = [idx for _, idx in sorted(zip(payoff_list, bag_idx), reverse=True)][:self.n_select]
+            selected_bag_dict = {i: bags[i] for i in selected_ids}
+            return selected_bag_dict, selected_ids
+        elif mode=="crossover":
+            selected_ids = [idx for _, idx in sorted(zip(payoff_list, bag_idx), reverse=True)][:self.n_crossover]
+            return None, selected_ids
 
     def gen_new_bag(self):
         initial_size = random.randrange(int(self.max_initial_size/2), self.max_initial_size)
@@ -63,16 +69,16 @@ class EvoBagging:
 
     def generation_gap(self, new_bags, bags):
         for _ in range(self.n_new_bags):
-            new_bag = self.gen_new_bag(self.X_train, self.y_train, self.max_initial_size)
+            new_bag = self.gen_new_bag()
             new_bag_idx = random.choice(list(set(range(len(bags))) - set(new_bags.keys())))
             new_bags[new_bag_idx] = new_bag
         return new_bags
 
-    def crossover_with_instance_prob(self, parent1, parent2):    
+    def crossover_pair(self, parent1, parent2):    
         preds_1 = parent1['preds']
         wrong_idx_1 = preds_1 != parent1['y'][0]
         parent1_leave_idx = parent1['X'].index[wrong_idx_1]
-        preds_2 = parent1['preds']
+        preds_2 = parent2['preds']
         wrong_idx_2 = preds_2 != parent2['y'][0]
         parent2_leave_idx = parent2['X'].index[wrong_idx_2]
         new_parent1_X = parent1['X'].loc[~parent1['X'].index.isin(parent1_leave_idx)]
@@ -93,14 +99,14 @@ class EvoBagging:
         return child1, child2
 
     def crossover(self, new_bags, bags):
-        _, crossover_pool_idx = self.naive_selection(bags, self.n_crossover)
+        _, crossover_pool_idx = self.naive_selection(bags, mode="crossover")
         random.shuffle(crossover_pool_idx)
         remaining_idx = list(set(range(len(bags))) - set(new_bags.keys()))
         random.shuffle(remaining_idx)
         for j in range(0, self.n_crossover, 2):
             parent1 = bags[crossover_pool_idx[j]]
             parent2 = bags[crossover_pool_idx[j + 1]]
-            child1, child2 = self.crossover_with_instance_prob(parent1, parent2)
+            child1, child2 = self.crossover_pair(parent1, parent2)
             new_bags[remaining_idx[j]] = child1
             new_bags[remaining_idx[j + 1]] = child2
         
@@ -123,17 +129,38 @@ class EvoBagging:
 
     def evaluate_bags(self, bags):
         with Pool(self.procs) as p:
-            p.map(partial(self.get_payoff, bags), list(bags.keys()))
+            output = p.map(partial(self.get_payoff, bags), list(bags.keys()))
+        bags = {idx: bag for (idx, bag) in output}
+        return bags
 
-    def voting_metric(self, X, y, bags):
+    def voting_metric(self, X, y, bags, return_preds=False):
+        if return_preds:
+            preds_list = []
+            for bag in bags.values():
+                bag_preds = bag['clf'].predict(X)
+                preds_list.append(bag_preds)
+            temp_preds = np.stack(preds_list)
+            final_preds = stats.mode(temp_preds).mode[0]
+            met = eval(f"{self.metric}_score(y.loc[:, 0], final_preds)")
+            return met, final_preds
+        else:
+            preds_list = []
+            for bag in bags.values():
+                bag_preds = bag['clf'].predict(X)
+                preds_list.append(bag_preds)
+            temp_preds = np.stack(preds_list)
+            final_preds = stats.mode(temp_preds).mode[0]
+            met = eval(f"{self.metric}_score(y.loc[:, 0], final_preds)")
+            return met
+
+    def voting_metric_weighted(self, X, y, bags):
         preds_list = []
         for bag in bags.values():
-            bag['clf'] = DecisionTreeClassifier()
-            bag['clf'].fit(bag['X'], bag['y'])
-            bag_preds = bag['clf'].predict(X)
+            bag_preds = bag['clf'].predict_proba(X)*bag['metric']
             preds_list.append(bag_preds)
         temp_preds = np.stack(preds_list)
-        final_preds = stats.mode(temp_preds).mode[0]
+        x = temp_preds.mean(axis=0)
+        final_preds = x[:, 0] < x[:, 1]
         met = eval(f"{self.metric}_score(y, final_preds)")
         return met
 
@@ -149,5 +176,5 @@ class EvoBagging:
         # update population
         bags = copy.deepcopy(new_bags)
         # evaluate
-        self.evaluate_bags(bags, self.size_coef, self.metric)
+        bags = self.evaluate_bags(bags)
         return bags
