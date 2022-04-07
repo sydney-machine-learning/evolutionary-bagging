@@ -52,18 +52,6 @@ def run(dataset_name,
             if voting == 'weighted':
                 weighted_voting_test_metric = optimizer.voting_metric_weighted(X_test, y_test, bags)*100
                 weighted_voting_test.append(weighted_voting_test_metric)
-        # # plot fitness
-        # print_df = payoff_df.mean(axis=1)
-        # p = sns.lineplot(data=print_df)
-        # p.set_xlabel("iteration")
-        # p.set_ylabel("fitness")
-        # p.xaxis.set_major_locator(ticker.MultipleLocator(5))
-        # p.xaxis.set_major_formatter(ticker.ScalarFormatter())
-        # fig = p.get_figure()
-        # fig.savefig(f'images/fitness/{dataset_name}_{t}.png')
-        # plt.clf()
-        # plot voting rules
-        # plot fitness
         print_df = payoff_df.mean(axis=1)
         p = sns.lineplot(data=print_df)
         p.set_xlabel("iteration")
@@ -91,14 +79,6 @@ def run(dataset_name,
         # get depth
         avg_depth_evobagging = depth_df.loc[n_iter, :].mean()
         depth_evobagging.append(avg_depth_evobagging)
-
-    
-    # message = "Accuracy\n"
-    # message += f"EvoBagging Train: {np.mean(all_voting_train)} {np.std(all_voting_train)}\n"
-    # message += f"EvoBagging Test:  {np.mean(all_voting_test)} {np.std(all_voting_test)}\n"
-    # message += f"Depth: {np.mean(depth_evobagging)} {np.std(depth_evobagging)}\n"
-    # with open(f"log/{dataset_name}.txt", "w") as f:
-    #     f.write(message)
 
 if __name__=="__main__":
     parser = argparse.ArgumentParser(description='Main experiment for real datasets')
